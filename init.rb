@@ -1,3 +1,1 @@
-# Include hook code here
-
-ActiveRecord::Base.send :include, ActsAsSearchable
+require File.dirname(__FILE__) + '/rails/init'
