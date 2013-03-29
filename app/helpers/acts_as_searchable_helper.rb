@@ -13,7 +13,7 @@ module ActsAsSearchableHelper
   #--------------------------------------------------------------
   def scope_filter_link(group, options = {})
     filter_name  = options.delete(:filter)
-    caption      = options.delete(:caption) || t("activerecord.scopes.sales.#{filter_name}")
+    caption      = options.delete(:caption) || t("activerecord.scopes.#{searchable_session.model.table_name}.#{filter_name}")
     remove       = options.delete(:remove)
     args         = options.delete(:args)
 
@@ -44,6 +44,12 @@ module ActsAsSearchableHelper
   #--------------------------------------------------------------
   def scope_filter_field_name(arg_name)
     "scope_filters[args][#{arg_name}]"
+  end
+
+  # Builds the caption for an active filter
+  #--------------------------------------------------------------
+  def scope_filter_caption(active_filter)
+    searchable_session.model.scope_caption(active_filter[:filter], active_filter[:args])
   end
 
   # Returns all active filters in a format which is easier to

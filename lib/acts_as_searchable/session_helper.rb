@@ -2,10 +2,11 @@ module Stex
   module Acts
     module Searchable
       class SessionHelper
-        def initialize(session, controller_path, action)
-          @session = session
+        def initialize(session, controller_path, action, model_name)
+          @session         = session
           @controller_path = controller_path
-          @action = action
+          @action          = action
+          @model           = model_name.to_s.classify.constantize
         end
 
         def controller_path
@@ -14,6 +15,10 @@ module Stex
 
         def action_name
           @action
+        end
+
+        def model
+          @model
         end
 
         #----------------------------------------------------------------
