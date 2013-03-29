@@ -82,6 +82,8 @@ module Stex
               helper_method :searchable_session
               before_filter :add_scope_filter, :only => args
               before_filter :remove_scope_filter, :only => args
+              before_filter :remove_all_scope_filters, :only => args
+              before_filter :load_active_scope_filters, :only => args
 
               helper :acts_as_searchable
 
@@ -123,13 +125,29 @@ module Stex
                 searchable_session.remove_filter(params[:scope_filters][:remove])
               end
 
+              # Removes all filters from the current controller and action
+              #--------------------------------------------------------------
+              define_method(:remove_all_scope_filters) do
+                return if params[:scope_filters].blank?
+                return if params[:scope_filters][:remove_all].blank?
+                searchable_session.remove_all_filters
+              end
+
               # Session Helper instance accessor
               #--------------------------------------------------------------
               define_method(:searchable_session) do
                 @searchable_session = Stex::Acts::Searchable::SessionHelper.new(session, controller_path, action_name)
               end
 
-              private :add_scope_filter, :remove_scope_filter, :searchable_session
+              # Loads the active filters into an instance variable, just in case
+              # that naming changes later
+              #--------------------------------------------------------------
+              define_method(:load_active_scope_filters) do
+                @active_scope_filters = searchable_session.active_filters
+              end
+
+              #Make the helper methods private so rails does not handle them as actions
+              private :add_scope_filter, :remove_scope_filter, :searchable_session, :load_active_scope_filters
             end
           end
         end

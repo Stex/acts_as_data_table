@@ -16,7 +16,7 @@ module Stex
         # TODO: Check for column errors in associated tables
         # TODO: Only cast values if necessary (numbers, etc.)
         #
-        # Parameters:
+        # == Parameters
         #   If the last argument is a Hash, it will be used as options.
         #   Possible Options:
         #     :scope_name -- This name will be used for the named_scope
@@ -24,19 +24,19 @@ module Stex
         #                    queries will be set to use only lowercase (case insensitive search)
         #
         #
-        # Examples:
+        # == Examples:
         #
         #  1. A User Model with has_many :roles
-        #    User.acts_as_searchable :first_name, :last_name, {:roles => :name}
+        #     User.acts_as_searchable :first_name, :last_name, {:roles => :name}
         #
-        #    Searches for users with either first or last name or a role matching the search term.
-        #    This will not work for a search like "Will Smith" as first and last name are not concatenated
+        #     Searches for users with either first or last name or a role matching the search term.
+        #     This will not work for a search like "Will Smith" as first and last name are not concatenated
         #
         #  2. Example 1 with full name functionality
-        #    User.acts_as_searchable [:first_name, :last_name], {:roles => :name}
+        #     User.acts_as_searchable [:first_name, :last_name], {:roles => :name}
         #
-        #    This will automatically concatenate the first_name and last_name columns during the search
-        #    so full names like "Will Smith" will be found as well as only "Will" or "Smith"
+        #     This will automatically concatenate the first_name and last_name columns during the search
+        #     so full names like "Will Smith" will be found as well as only "Will" or "Smith"
         #--------------------------------------------------------------
         def acts_as_searchable(*args)
           options = {:scope_name => :column_search, :downcase => true}
