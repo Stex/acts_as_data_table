@@ -221,7 +221,7 @@ module Stex
               #
               # Parameters
               #   :sorting_columns => {
-              #     :model_name  => 'Sale',
+              #     :model_name  => 'sale',
               #     :column_name => 'reference'
               #   }
               #--------------------------------------------------------------

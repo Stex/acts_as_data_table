@@ -120,7 +120,7 @@ module Stex
 
         # Removes a sorting column from current controller and action
         #--------------------------------------------------------------
-        def remove_sorting_column(model, column_name)
+        def remove_sorting_column(model_name, column_name)
           args = generate_sorting_arguments(model_name, column_name)
           return if @session[:column_sorting].nil? || @session[:column_sorting].empty?
           return unless @session[:column_sorting].has_key?(args[:key])
