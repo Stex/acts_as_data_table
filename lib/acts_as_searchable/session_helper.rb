@@ -148,8 +148,8 @@ module Stex
         def sorting_direction(model_name, column_name)
           args = generate_sorting_arguments(model_name, column_name)
 
-          return false if @session[:column_sorting].nil? || @session[:column_sorting].empty?
-          return false unless @session[:column_sorting].has_key?(args[:key])
+          return nil if @session[:column_sorting].nil? || @session[:column_sorting].empty?
+          return nil unless @session[:column_sorting].has_key?(args[:key])
           entry = @session[:column_sorting][args[:key]].assoc(args[:column])
           entry ? entry.last : nil
         end
@@ -159,6 +159,7 @@ module Stex
         #   defaults:: [['users.last_name', 'ASC'], ['users.first_name', 'ASC']]
         #--------------------------------------------------------------
         def load_sorting_defaults(defaults = [])
+          return if defaults.empty?
           controller_key = action_key(controller_path, action_name)
           @session[:column_sorting] = {}
           @session[:column_sorting][controller_key] = defaults
