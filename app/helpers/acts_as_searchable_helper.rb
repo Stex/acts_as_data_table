@@ -1,5 +1,9 @@
 module ActsAsSearchableHelper
 
+  #----------------------------------------------------------------
+  #                          Filters
+  #----------------------------------------------------------------
+
   # Generates a link to to add or remove a certain filter to the
   # current controller/action.
   # Parameters:
@@ -52,6 +56,27 @@ module ActsAsSearchableHelper
     searchable_session.model.scope_caption(active_filter[:filter], active_filter[:args])
   end
 
+  # Returns the arguments for a currently active filter or nil
+  # if the given filter is currently not active.
+  #-------------------------------------------------------------
+  def scope_filter_arg(filter_name, arg_name)
+    @filter_args ||= {}
+    @filter_args[filter_name.to_s] ||= {}
+
+    unless @filter_args[filter_name.to_s].has_key? arg_name.to_s
+      filter = active_scope_filters.select{|f| f[:filter].to_s == filter_name.to_s}.first
+      if filter
+        @filter_args[filter_name.to_s] = filter[:args]
+      else
+        #If the filter is currently not active, cache the argument anyway with nil
+        @filter_args[filter_name.to_s] ||= {}
+        @filter_args[filter_name.to_s][arg_name.to_s] = nil
+      end
+    end
+
+    @filter_args[filter_name.to_s][arg_name.to_s]
+  end
+
   # Returns all active filters in a format which is easier to
   # process than the original hash structure. Each element of the
   # returned array contains the following properties:
@@ -64,15 +89,42 @@ module ActsAsSearchableHelper
   # :args:: The arguments the filter was applied to (for display reasons)
   #--------------------------------------------------------------
   def active_scope_filters
-    active_filters = []
+    return @active_filters if @active_filters
+
+    @active_filters = []
     searchable_session.active_filters.each do |group, filters|
       filters.each do |filter, args|
-        active_filters << {:delete_url => {:scope_filters => {:remove => group}},
+        @active_filters << {:delete_url => {:scope_filters => {:remove => group}},
                            :group => group,
                            :filter => filter,
                            :args => args}
       end
     end
-    active_filters
+    @active_filters
+  end
+
+  #----------------------------------------------------------------
+  #                        Sorting Columns
+  #----------------------------------------------------------------
+
+  def sortable_column(model_name, column_name, caption = nil, &proc)
+    sortable = Struct.new(:caption, :direction, :active, :url_replace, :url_add_toggle, :url_remove).new
+
+    sortable.direction      = searchable_session.sorting_direction(model_name, column_name)
+    sortable.active         = sortable.direction.present?
+
+    sortable.url_replace    = {:sorting_columns => {:replace => true, :model_name => model_name, :column_name => column_name}}
+    sortable.url_add_toggle = {:sorting_columns => {:add     => true, :model_name => model_name, :column_name => column_name}}
+    sortable.url_remove     = {:sorting_columns => {:remove  => true, :model_name => model_name, :column_name => column_name}}
+    sortable.caption        = caption
+
+
+    #If a block is given, we let the user handle the content of the table
+    #header himself. Otherwise, we'll generate the default links.
+    if block_given?
+      yield sortable
+    else
+      render :partial => 'shared/sortable_column', :object => sortable
+    end
   end
 end

@@ -77,7 +77,103 @@ module Stex
               (active[group.to_s][scope.to_s].to_a - args.to_a).empty? #sometimes the session hash contains {:raise => true}, whereever it comes from...
         end
 
+        #----------------------------------------------------------------
+        #                         Column Sorting
+        #----------------------------------------------------------------
+
+        # Replaces all current sorting columns with the new one
+        #--------------------------------------------------------------
+        def replace_sorting_column(model_name, column_name)
+          args = generate_sorting_arguments(model_name, column_name)
+          return unless args[:model].column_names.include?(column_name.to_s)
+
+          @session[:column_sorting] ||= {}
+          @session[:column_sorting][args[:key]] = [[args[:column], 'ASC']]
+        end
+
+        # Adds a new sorting column to the current controller and action
+        #--------------------------------------------------------------
+        def add_or_toggle_sorting_column(model_name, column_name)
+          args = generate_sorting_arguments(model_name, column_name)
+
+          return unless args[:model].column_names.include?(column_name.to_s)
+
+          @session[:column_sorting] ||= {}
+          @session[:column_sorting][args[:key]] ||= []
+
+          existing_entry = @session[:column_sorting][args[:key]].assoc(args[:column])
+
+          #Toggle the direction
+          if existing_entry
+            idx = @session[:column_sorting][args[:key]].index(existing_entry)
+
+            direction = existing_entry.last == 'ASC' ? 'DESC' : 'ASC'
+
+            @session[:column_sorting][args[:key]].delete(existing_entry)
+
+            @session[:column_sorting][args[:key]].insert(idx, [args[:column], direction])
+          else
+            #Simply append the new column to the sorting list
+            @session[:column_sorting][args[:key]] << [args[:column], 'ASC']
+          end
+        end
+
+        # Removes a sorting column from current controller and action
+        #--------------------------------------------------------------
+        def remove_sorting_column(model, column_name)
+          args = generate_sorting_arguments(model_name, column_name)
+          return if @session[:column_sorting].nil? || @session[:column_sorting].empty?
+          return unless @session[:column_sorting].has_key?(args[:key])
+
+          existing_entry = @session[:column_sorting][args[:key]].assoc(args[:column])
+          @session[:column_sorting][args[:key]].delete(existing_entry) if existing_entry
+
+          #Remove the controller namespace from the session if it's empty
+          @session[:column_sorting].delete(args[:key]) if @session[:column_sorting][args[:key]].empty?
+        end
+
+        # Returns all sorting columns as a string
+        #--------------------------------------------------------------
+        def sorting_columns_string
+          controller_key = action_key(controller_path, action_name)
+          return nil if @session[:column_sorting].nil? || @session[:column_sorting].empty?
+          return nil unless @session[:column_sorting].has_key?(controller_key)
+
+          @session[:column_sorting][controller_key].map {|column_and_direction| column_and_direction.join(' ')}.join(', ')
+        end
+
+        # Returns the current sorting direction for a given column
+        # or nil if this column is currently not active.
+        #--------------------------------------------------------------
+        def sorting_direction(model_name, column_name)
+          args = generate_sorting_arguments(model_name, column_name)
+
+          return false if @session[:column_sorting].nil? || @session[:column_sorting].empty?
+          return false unless @session[:column_sorting].has_key?(args[:key])
+          entry = @session[:column_sorting][args[:key]].assoc(args[:column])
+          entry ? entry.last : nil
+        end
+
+        # loads the sorting defaults for the current action
+        # Parameters==
+        #   defaults:: [['users.last_name', 'ASC'], ['users.first_name', 'ASC']]
+        #--------------------------------------------------------------
+        def load_sorting_defaults(defaults = [])
+          controller_key = action_key(controller_path, action_name)
+          @session[:column_sorting] = {}
+          @session[:column_sorting][controller_key] = defaults
+        end
+
         private
+
+        def generate_sorting_arguments(model_name, column_name)
+          model = model_name.to_s.classify.constantize
+          {
+              :model  => model,
+              :key    => action_key(controller_path, action_name),
+              :column => "#{model.table_name}.#{column_name}"
+          }
+        end
 
         def action_key(controller, action)
           [controller.gsub("/", "_"), action].join('_')

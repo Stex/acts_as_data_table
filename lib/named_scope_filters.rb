@@ -61,6 +61,52 @@ module Stex
                 I18n.t(scope_name, :scope => "activerecord.scopes.#{table_name}", :default => scope_name)
               end
             end
+
+            #def is_named_scope_sortable(*args)
+            #  options = args.pop if args.last.is_a?(Hash)
+            #  processed_args = args.map {|a| generate_sortable_columns_and_includes(a)}.flatten
+            #
+            #  column_names = []
+            #  unfiltered_includes = []
+            #
+            #  processed_args.each do |arg|
+            #    column_names += arg[:columns]
+            #    unfiltered_includes += arg[:includes]
+            #  end
+            #
+            #  #TODO: filter longer include chains, have to get a real example first.
+            #
+            #
+            #  1
+            #end
+
+
+            ## Processes arguments for the sortable generator
+            ## Returns column names and necessary includes
+            ##--------------------------------------------------------------
+            #def generate_sortable_columns_and_includes(arg, model = self)
+            #  columns  = []
+            #  includes = []
+            #  #Associations from the current model
+            #  if arg.is_a?(Hash)
+            #    arg.each do |association_name, columns_and_associations|
+            #      association_endpoint = Stex::Acts::Searchable::DataHolder.graph.associations_for(model)[association_name.to_s]
+            #      Array(columns_and_associations).each do |new_arg|
+            #        processed_arg = generate_sortable_columns_and_includes(new_arg, association_endpoint)
+            #        columns += processed_arg[:columns]
+            #        if processed_arg[:includes].any?
+            #          includes << {association_name => processed_arg[:includes]}
+            #        else
+            #          includes << association_name if processed_arg[:columns].any?
+            #        end
+            #      end
+            #    end
+            #  else
+            #    columns << "#{model.table_name}.#{arg}" if model.column_names.include?(arg.to_s)
+            #  end
+            #
+            #  {:columns => columns, :includes => includes}
+            #end
           end
         end
 
@@ -80,6 +126,7 @@ module Stex
             #--------------------------------------------------------------
             def scope_filters(model_name, *args)
               helper_method :searchable_session
+
               before_filter :add_scope_filter, :only => args
               before_filter :remove_scope_filter, :only => args
               before_filter :remove_all_scope_filters, :only => args
@@ -148,6 +195,71 @@ module Stex
 
               #Make the helper methods private so rails does not handle them as actions
               private :add_scope_filter, :remove_scope_filter, :searchable_session, :load_active_scope_filters
+            end
+
+            # Adds methods for automatic column sorting to the controller
+            # Parameters:
+            # actions_and_defaults:: Hash of actions which will be used to
+            #         display sortable content and their initial sorting
+            #         columns.
+            #
+            # == Example
+            #   column_sorting :index => [['users.last_name', 'ASC'], ['users.first_name', 'ASC']]
+            #--------------------------------------------------------------
+            def column_sorting(actions_and_defaults = {})
+
+              before_filter :add_or_toggle_sorting_column, :only => actions_and_defaults.keys
+              before_filter :replace_sorting_column, :only => actions_and_defaults.keys
+              before_filter :remove_sorting_column, :only => actions_and_defaults.keys
+              before_filter :load_sorting_columns, :only => actions_and_defaults.keys
+
+              param_namespace = :sorting_columns
+
+              # Adds a sorting column to the current sorting columns or
+              # toggles its direction if it is already part of the
+              # active sorting.
+              #
+              # Parameters
+              #   :sorting_columns => {
+              #     :model_name  => 'Sale',
+              #     :column_name => 'reference'
+              #   }
+              #--------------------------------------------------------------
+              define_method(:add_or_toggle_sorting_column) do
+                return if params[param_namespace].blank?
+                return if [:add, :model_name, :column_name].select {|p| params[param_namespace][p].blank?}.any?
+                searchable_session.add_or_toggle_sorting_column(params[param_namespace][:model_name], params[param_namespace][:column_name])
+              end
+
+              # Replaces all current sorting columsn with the given one
+              #--------------------------------------------------------------
+              define_method(:replace_sorting_column) do
+                return if params[param_namespace].blank?
+                return if [:replace, :model_name, :column_name].select {|p| params[param_namespace][p].blank?}.any?
+                searchable_session.replace_sorting_column(params[param_namespace][:model_name], params[param_namespace][:column_name])
+              end
+
+              # Removes a column from the current sorting columns
+              #--------------------------------------------------------------
+              define_method(:remove_sorting_column) do
+                return if params[param_namespace].blank?
+                return if [:remove, :model_name, :column_name].select {|p| params[param_namespace][p].blank?}.any?
+                searchable_session.remove_sorting_column(params[param_namespace][:model_name], params[param_namespace][:column_name])
+              end
+
+              # Loads the current sorting string into an instance variable
+              #--------------------------------------------------------------
+              define_method(:load_sorting_columns) do
+                @current_sorting_string = searchable_session.sorting_columns_string
+
+                #If there is no user-set sorting, load the default sorting into the session.
+                if @current_sorting_string.blank?
+                  searchable_session.load_sorting_defaults(actions_and_defaults[action_name.to_sym])
+                end
+
+                @current_sorting_string = searchable_session.sorting_columns_string
+              end
+
             end
           end
         end
