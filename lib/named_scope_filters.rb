@@ -1,6 +1,6 @@
 module Stex
   module Acts
-    module Searchable
+    module DataTable
       module NamedScopeFilters
         module ActiveRecord
           def self.included(base)
@@ -29,7 +29,7 @@ module Stex
               filter_groups.each do |name, named_scopes|
                 named_scopes.each do |ns|
                   scope_name = ns.first
-                  throw "The scope '#{scope_name}' in group '#{name}' does not exist." unless scopes.has_key?(scope_name)
+                  logger.warn "The scope '#{scope_name}' in group '#{name}' does not exist." unless scopes.has_key?(scope_name)
                 end
               end
 
@@ -132,7 +132,7 @@ module Stex
               before_filter :remove_all_scope_filters, :only => args
               before_filter :load_active_scope_filters, :only => args
 
-              helper :acts_as_searchable
+              helper :acts_as_data_table
 
               # Adds a filter to the current data table. Works with the
               # named scope filterable plugin.
@@ -183,7 +183,7 @@ module Stex
               # Session Helper instance accessor
               #--------------------------------------------------------------
               define_method(:searchable_session) do
-                @searchable_session = Stex::Acts::Searchable::SessionHelper.new(session, controller_path, action_name, model_name)
+                @searchable_session = Stex::Acts::DataTable::SessionHelper.new(session, controller_path, action_name, model_name)
               end
 
               # Loads the active filters into an instance variable, just in case

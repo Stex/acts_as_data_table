@@ -1,6 +1,6 @@
 module Stex
   module Acts
-    module Searchable
+    module DataTable
       def self.included(base)
         base.send :extend, ClassMethods
       end
@@ -45,7 +45,7 @@ module Stex
           includes = []
           fields = args.map {|arg| process_column_arg(arg, includes)}.flatten
 
-          fields = fields.map {|f| Stex::Acts::Searchable.database_cast(f)}
+          fields = fields.map {|f| Stex::Acts::DataTable.database_cast(f)}
           fields = fields.map {|f| "LOWER(#{f})"} if options[:downcase]
           conditions = fields.map {|f| "#{f} LIKE ?"}.join(' OR ')
 
@@ -74,13 +74,18 @@ module Stex
             when :date
               date_column = column
             else
-              throw "The column #{column} has no valid type for is_date_filterable."
+              logger.warn "The column #{column} has no valid type for is_date_filterable."
           end
 
-          named_scope Stex::Acts::Searchable.build_scope_name(scope_prefix, :today), :conditions => ["#{date_column} = ?", Date.today]
-          named_scope Stex::Acts::Searchable.build_scope_name(scope_prefix, :this_week), :conditions => ["#{date_column} >= ? AND #{date_column} <= ?", Date.today.at_beginning_of_week, Date.today]
-          named_scope Stex::Acts::Searchable.build_scope_name(scope_prefix, :this_month), :conditions => ["#{date_column} >= ? AND #{date_column} <= ?", Date.today.at_beginning_of_month, Date.today]
-          named_scope Stex::Acts::Searchable.build_scope_name(scope_prefix, :this_year), :conditions => ["#{date_column} >= ? AND #{date_column} <= ?", Date.today.at_beginning_of_year, Date.today]
+          scopes = {:today      => lambda {{:conditions => ["#{date_column} = ?", Date.today]}},
+                    :tomorrow   => lambda {{:conditions => ["#{date_column} = ?", Date.today + 1.day]}},
+                    :this_week  => lambda {{:conditions => ["#{date_column} >= ? AND #{date_column} <= ?", Date.today.at_beginning_of_week, Date.today.at_end_of_week]}},
+                    :this_month => lambda {{:conditions => ["#{date_column} >= ? AND #{date_column} <= ?", Date.today.at_beginning_of_month, Date.today.at_end_of_month]}},
+                    :this_year  => lambda {{:conditions => ["#{date_column} >= ? AND #{date_column} <= ?", Date.today.at_beginning_of_year, Date.today.at_end_of_year]}}}
+
+          scopes.each do |key, value|
+            named_scope Stex::Acts::DataTable.build_scope_name(scope_prefix, key), value
+          end
         end
 
         private
@@ -109,7 +114,7 @@ module Stex
             if model.column_names.include?(arg.to_s)
               [model.table_name, arg.to_s].join('.')
             else
-              throw ArgumentError.new("The table #{model.table_name} does not contain a column named #{arg}")
+              logger.warn "The table #{model.table_name} does not contain a column named #{arg}"
             end
           end
         end

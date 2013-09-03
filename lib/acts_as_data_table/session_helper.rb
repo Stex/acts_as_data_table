@@ -1,6 +1,6 @@
 module Stex
   module Acts
-    module Searchable
+    module DataTable
       class SessionHelper
         def initialize(session, controller_path, action, model_name)
           @session         = session
