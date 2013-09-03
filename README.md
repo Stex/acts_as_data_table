@@ -19,3 +19,5 @@ which will copy the file `acts_as_data_table.js` to `/public/javascripts`.
 Afterwards, you can simply include it to your application's layout using
 
     <%= javascript_include_tag 'acts_as_data_table' %>
+    
+Please note that this javascript addon requires jQuery.
