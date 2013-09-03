@@ -5,6 +5,16 @@ require 'rdoc/task'
 desc 'Default: run unit tests.'
 task :default => :test
 
+desc "Compiles the plugin's coffeescript to a js file"
+task :make do |t|
+  input_files      = ['./app/coffeescripts/acts_as_data_table.coffee']
+  output_directory = './generators/acts_as_data_table/templates/assets/js'
+
+  input_files.each do |file|
+    `coffee -l -c -o #{output_directory} #{file}`
+  end
+end
+
 desc 'Test the acts_as_searchable plugin.'
 Rake::TestTask.new(:test) do |t|
   t.libs << 'lib'

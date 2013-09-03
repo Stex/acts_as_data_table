@@ -7,28 +7,36 @@ module ActsAsSearchableHelper
   # Generates a link to to add or remove a certain filter to the
   # current controller/action.
   # Parameters:
-  # group:: The group name the filter belongs to
-  # options
-  #   :filter:: The filter name to be applied
-  #   :caption:: The link caption, defaults to a localization
-  #   :remove:: If set to +true+, the filter will be removed instead of (re-)added
-  #   :args:: Args to be used when applying the filter
+  # +group+::            The group name the filter belongs to
+  #
+  # ===Options
+  #   +:filter+::        The filter name to be applied
+  #   +:caption+::       The link caption, defaults to a localization
+  #   +:remove+::        If set to +true+, the filter will be removed instead of (re-)added
+  #   +:args+::          Args to be used when applying the filter
+  #   +:auto_remove+::   If set to true, a click on an active filter will remove it again.
+  #
   #   All other options will be used as html_options for the resulting link
   #--------------------------------------------------------------
   def scope_filter_link(group, options = {})
-    filter_name  = options.delete(:filter)
-    caption      = options.delete(:caption) || t("activerecord.scopes.#{searchable_session.model.table_name}.#{filter_name}")
-    remove       = options.delete(:remove)
-    args         = options.delete(:args)
+    filter_name     = options.delete(:filter)
+    caption         = options.delete(:caption) || t("activerecord.scopes.#{searchable_session.model.table_name}.#{filter_name}")
+    args            = options.delete(:args)
+    surrounding_tag = options.delete(:surrounding)
+    auto_remove     = options.delete(:auto_remove) && searchable_session.active_filter?(group, filter_name, args)
+    remove          = options.delete(:remove)
 
-    if remove
-      link_to_remote caption, :url => {:scope_filters => {:remove => group}}, :method => :get, :html => options
+    if remove || auto_remove
+      url = {:scope_filters => {:remove => group}}
     else
-      classes = options[:class].try(:split, ' ') || []
-      classes << 'act' if searchable_session.active_filter?(group, filter_name, args)
-      options[:class] = classes.join(' ')
-      link_to_remote caption, :url => {:scope_filters => {:group => group, :name => filter_name, :args => args}}, :method => :get, :html => options
+      url = {:scope_filters => {:group => group, :name => filter_name, :args => args}}
     end
+
+    classes = options[:class].try(:split, ' ') || []
+    classes << 'active' if searchable_session.active_filter?(group, filter_name, args)
+    options[:class] = classes.join(' ')
+    link = link_to_remote caption, :url => url, :method => :get, :html => options
+    surrounding_tag ? content_tag(surrounding_tag, link, :class => options[:class]) : link
   end
 
   # Generates the URL to remove all filters from the current action
@@ -81,12 +89,15 @@ module ActsAsSearchableHelper
   # process than the original hash structure. Each element of the
   # returned array contains the following properties:
   #
-  # :delete_url:: A url hash which contains the necessary parameters to
-  #               remove the current filter from the active list
-  # :group:: The filter group this filter is in (in case you want to
-  #          user the +filter_link+ helper method)
-  # :filter:: The filter name
-  # :args:: The arguments the filter was applied to (for display reasons)
+  # +:delete_url+:: A url hash which contains the necessary parameters to
+  #                 remove the current filter from the active list
+  #
+  # +:group+::      The filter group this filter is in (in case you want to
+  #                 user the +filter_link+ helper method)
+  #
+  # +:filter+::     The filter name
+  #
+  # +:args+::       The arguments the filter was applied to (for display reasons)
   #--------------------------------------------------------------
   def active_scope_filters
     return @active_filters if @active_filters
@@ -95,12 +106,26 @@ module ActsAsSearchableHelper
     searchable_session.active_filters.each do |group, filters|
       filters.each do |filter, args|
         @active_filters << {:delete_url => {:scope_filters => {:remove => group}},
-                           :group => group,
-                           :filter => filter,
-                           :args => args}
+                            :group      => group,
+                            :filter     => filter,
+                            :args       => HashWithIndifferentAccess.new(args)}
       end
     end
     @active_filters
+  end
+
+  # Returns the active scope filter for a given filter group
+  # If you hand in a block, the filter will be available inside
+  # If there is no active filter for the given group,
+  # the block is not executed.
+  #--------------------------------------------------------------
+  def active_scope_filter(group, &proc)
+    filter = active_scope_filters.select {|sf| sf[:group].to_s == group.to_s}.first
+    if block_given?
+      yield filter if filter
+    else
+      filter
+    end
   end
 
   #----------------------------------------------------------------
