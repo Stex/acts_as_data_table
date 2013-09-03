@@ -58,6 +58,12 @@ module ActsAsDataTableHelper
     "scope_filters[args][#{arg_name}]"
   end
 
+  # Generates a form field id for the given scope and arg
+  #--------------------------------------------------------------
+  def scope_filter_field_id(scope, arg_name)
+    [scope, arg_name].join('_')
+  end
+
   # Builds the caption for an active filter
   #--------------------------------------------------------------
   def scope_filter_caption(active_filter)
