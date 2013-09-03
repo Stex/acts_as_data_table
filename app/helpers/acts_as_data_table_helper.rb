@@ -1,4 +1,4 @@
-module ActsAsSearchableHelper
+module ActsAsDataTableHelper
 
   #----------------------------------------------------------------
   #                          Filters
