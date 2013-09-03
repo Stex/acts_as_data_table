@@ -1,7 +1,7 @@
-acts_as_searchable
+Acts As Data Table
 ==================
 
-Simple multi-column-search for Ruby on Rails Models
+Multi column search, Column Sorting and Extended Filters for Rails Models
 
 Installation
 ============
