@@ -1,52 +1,31 @@
-Acts As Data Table
-==================
+# ActsAsDataTable
 
-Multi column search, Column Sorting and Extended Filters for Rails Models
+TODO: Write a gem description
 
-Installation
-============
+## Installation
 
-To install the plugin in a Rails 2.3.x application, simply run the following command:
+Add this line to your application's Gemfile:
 
-    ruby script/plugin install https://github.com/Stex/acts_as_data_table.git
-    
-If you'd like to use the additional javascript functionality for multiple
-sorting columns, you also have to run the javascript generator
-
-    ruby script/generate acts_as_data_table js
-    
-which will copy the file `acts_as_data_table.js` to `/public/javascripts`.
-Afterwards, you can simply include it to your application's layout using
-
-    <%= javascript_include_tag 'acts_as_data_table' %>
-    
-Please note that this javascript addon requires jQuery.
-
-Usage
-=====
-
-This section will provide some usage examples.
-
-Multi column search
--------------------
-
-To create a named scope which will automatically search for a string in multiple
-columns of a a model and its associations, you can create it using
-
-``` ruby
-acts_as_searchable :column1, :column2, {options}
-```
-As an example, let's say we have a User and a Role model, where each user `has_many` roles. 
-Now, to create a named scope which searches in the user's first and last name and his roles, 
-this could be done by:
-
-``` ruby
-acts_as_searchable :first_name, :last_name, {:roles => :name}
+```ruby
+gem 'acts_as_data_table'
 ```
 
-However, this might lead to problems when a visitor enters the user's first and last name to the search field.
-The plugin can automatically concat first and last name. The updated ruby line would be
+And then execute:
 
-``` ruby
-acts_as_searchable [:first_name, :last_name], {:roles => :name}
-```
+    $ bundle
+
+Or install it yourself as:
+
+    $ gem install acts_as_data_table
+
+## Usage
+
+TODO: Write usage instructions here
+
+## Contributing
+
+1. Fork it ( https://github.com/[my-github-username]/acts_as_data_table/fork )
+2. Create your feature branch (`git checkout -b my-new-feature`)
+3. Commit your changes (`git commit -am 'Add some feature'`)
+4. Push to the branch (`git push origin my-new-feature`)
+5. Create a new Pull Request

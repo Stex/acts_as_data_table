@@ -22,14 +22,13 @@ module Stex
 
               #Convert filters
               filter_groups.each do |group_name, filters|
+                filters = Array(filters)
                 filters.map! {|f| Array(f)}
-              end
 
-              #Check if all given named scopes actually exist
-              filter_groups.each do |name, named_scopes|
-                named_scopes.each do |ns|
+                #Check if all given named scopes actually exist
+                filters.each do |ns|
                   scope_name = ns.first
-                  logger.warn "The scope '#{scope_name}' in group '#{name}' does not exist." unless scopes.has_key?(scope_name)
+                  logger.warn "The scope '#{scope_name}' in group '#{group_name}' does not exist." unless scopes.has_key?(scope_name)
                 end
               end
 
@@ -58,7 +57,12 @@ module Stex
               #This method only does default labelling and will most likely be
               #overridden in the actual model
               define_singleton_method(:scope_caption) do |scope_name, args|
-                I18n.t(scope_name, :scope => "activerecord.scopes.#{table_name}", :default => scope_name)
+                options = {:scope => "activerecord.scopes.#{table_name}", :default => scope_name}
+                symbol_args = {}
+                args.each do |k,v|
+                  symbol_args[k.to_sym] = v
+                end
+                I18n.t(scope_name, options.merge(symbol_args))
               end
             end
 
