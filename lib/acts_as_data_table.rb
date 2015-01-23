@@ -8,14 +8,13 @@ require 'acts_as_data_table/session_helper'
 #require 'acts_as_searchable/data_holder'
 
 module ActsAsDataTable
-  # Your code goes here...
 end
 
 ActiveRecord::Base.class_eval do
-  include Stex::Acts::DataTable::MultiColumnScopes
-  include Stex::Acts::DataTable::NamedScopeFilters::ActiveRecord
+  include Acts::DataTable::MultiColumnScopes
+  include Acts::DataTable::NamedScopeFilters::ActiveRecord
 end
 
-ActionController::Base.class_eval do
-  include Stex::Acts::DataTable::NamedScopeFilters::ActionController
-end
+#ActionController::Base.class_eval do
+#  include Acts::DataTable::NamedScopeFilters::ActionController
+#end
