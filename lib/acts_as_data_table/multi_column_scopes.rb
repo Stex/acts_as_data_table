@@ -47,8 +47,8 @@ module Acts
 
           include_chain = []
 
-          fields        = args.map {|arg| process_column_arg(arg, include_chain)}.flatten
-                              .map {|f| Stex::Acts::DataTable.database_cast(f)}
+          fields        = args.map {|arg| Acts::DataTable::MultiColumnScopes.process_column_arg(arg, include_chain, self)}
+          fields        = fields.flatten.map {|f| Acts::DataTable::MultiColumnScopes.database_cast(f)}
           fields        = fields.map {|f| "LOWER(#{f})"} if options[:downcase]
 
           conditions    = fields.map {|f| "#{f} LIKE ?"}.join(' OR ')
@@ -64,41 +64,41 @@ module Acts
             end
           }
         end
+      end
 
-        private
-
-        # Processes a single argument for acts_as_searchable.
-        # Handles
-        #   - simple values (e.g. :first_name),
-        #   - arrays which will be concatenated with a space character (e.g. [:first_name, :last_name])
-        #   - hashes which represent associations on the main model (e.g. :student => [:mat_num])
-        #--------------------------------------------------------------
-        def process_column_arg(arg, includes, model = self)
-          if arg.is_a?(Hash)
-            res = []
-            arg.each do |association, columns|
-              includes << association
-              Array(columns).each do |column|
-                res << process_column_arg(column, includes, association.to_s.singularize.classify.constantize)
-              end
+      #
+      # Processes a single argument for has_multi_column_scope.
+      # Handles
+      #   - simple values (e.g. :first_name),
+      #   - arrays which will be concatenated with a space character (e.g. [:first_name, :last_name])
+      #   - hashes which represent associations on the main model (e.g. :student => [:mat_num])
+      #
+      def self.process_column_arg(arg, includes, model = self)
+        if arg.is_a?(Hash)
+          res = []
+          arg.each do |association, columns|
+            includes << association
+            Array(columns).each do |column|
+              res << process_column_arg(column, includes, association.to_s.singularize.classify.constantize)
             end
-            res
-          elsif arg.is_a?(Array)
-            columns = arg.map {|a| process_column_arg(a, includes, model)}
-            columns = columns.map {|c| "TRIM(#{c})"}
-            "CONCAT(#{columns.join(", ' ', ")})"
+          end
+          res
+        elsif arg.is_a?(Array)
+          columns = arg.map {|a| process_column_arg(a, includes, model)}
+          columns = columns.map {|c| "TRIM(#{c})"}
+          "CONCAT(#{columns.join(", ' ', ")})"
+        else
+          if model.column_names.include?(arg.to_s)
+            [model.table_name, arg.to_s].join('.')
           else
-            if model.column_names.include?(arg.to_s)
-              [model.table_name, arg.to_s].join('.')
-            else
-              logger.warn "The table #{model.table_name} does not contain a column named #{arg}"
-            end
+            logger.warn "The table #{model.table_name} does not contain a column named #{arg}"
           end
         end
       end
 
+      #
       # Performs a cast to text-like for various database types
-      #--------------------------------------------------------------
+      #
       def self.database_cast(content)
         case ActiveRecord::Base.connection.adapter_name
           when 'MySQL'
