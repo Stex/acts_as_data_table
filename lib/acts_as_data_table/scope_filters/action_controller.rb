@@ -30,7 +30,7 @@ module Acts
             #Add helper methods to this controller's views
             helper :acts_as_data_table
 
-            model_name = (options.delete(:model) || self.name.underscore.split('/').last.sub('_controller', '')).to_s.camelize
+            model_name = (options.delete(:model) || self.name.underscore.split('/').last.sub('_controller', '')).to_s.camelize.singularize
 
             #Create a custom before filter
             before_filter options do |controller|
@@ -43,10 +43,11 @@ module Acts
               #Ensure that the given action is valid (add a filter, remove a filter, remove all filters)
               return unless %w(add remove reset).include?(sf_params[:action])
 
-              case sf_params[:action]
+              # case sf_params[:action]
+              #
+              # end
 
-              end
-
+              #Ensure that the :group and :name param for the filter are actually given
               return if [:group, :name].any? { |p| params[:scope_filters][p].blank? }
             end
           end

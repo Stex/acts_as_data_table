@@ -9,6 +9,29 @@ require 'acts_as_data_table/scope_filters/active_record'
 module ActsAsDataTable
 end
 
+module Acts
+  module DataTable
+    def self.ensure_nested_hash!(hash, *keys)
+      h = hash
+      keys.each do |key|
+        h[key] ||= {}
+        h = h[key]
+      end
+    end
+
+    def self.lookup_nested_hash(hash, *keys)
+      return nil if hash.nil?
+
+      h = hash
+      keys.each do |key|
+        return nil unless h.has_key?(key)
+        h = h[key]
+      end
+      h
+    end
+  end
+end
+
 ActiveRecord::Base.class_eval do
   include Acts::DataTable::MultiColumnScopes
   include Acts::DataTable::ScopeFilters::ActiveRecord
