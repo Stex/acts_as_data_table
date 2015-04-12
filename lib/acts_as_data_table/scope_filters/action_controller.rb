@@ -54,11 +54,22 @@ module Acts
         end
 
         module OnDemand
-
           def self.included(base)
 
           end
+        end
 
+        def self.set_request_filters!(model, filters)
+          Acts::DataTable.ensure_nested_hash!(Thread.current, :scope_filters, model.to_s)
+          Thread.current[:scope_filters][model.to_s] = filters
+        end
+
+        def self.get_request_filters(model)
+          Acts::DataTable.lookup_nested_hash(Thread.current, :scope_filters, model.to_s)
+        end
+
+        def clear_request_filters!
+          Thread.current[:scope_filters] = nil
         end
       end
     end

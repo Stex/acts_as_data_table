@@ -24,7 +24,7 @@ module Acts
 
       h = hash
       keys.each do |key|
-        return nil unless h.has_key?(key)
+        return nil unless h[key]
         h = h[key]
       end
       h

@@ -51,8 +51,9 @@ module Acts
             unless scopes.has_key?(:with_scope_filters)
               # Generate the named scope which will handle the dynamically given filters
               # A filter is only applied if a given validation method returns +true+
-              # The +filters+ argument is a hash of the structure {group_name => [scope_name, *args]}
-              named_scope :with_scope_filters, lambda { |filters|
+              named_scope :with_scope_filters, lambda {
+                filters = Acts::DataTable::ScopeFilters::ActionController.get_request_filters(model)
+
                 scope_chain = self
                 filters.each do |group_name, scope_and_args|
                   scope_name = scope_and_args.first
