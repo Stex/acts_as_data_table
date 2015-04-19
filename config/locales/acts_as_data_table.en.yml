@@ -1,0 +1,9 @@
+en:
+  acts_as_data_table:
+    scope_filters:
+      add_filter:
+        filter_not_registered: "The filter '%{scope}' in group '%{group}' was not properly registered in model '%{model}'"
+        non_matching_arity: "The filter '%{scope}' in group '%{group}' registered in model '%{model}' does did not get the required amount of arguments"
+
+      validations:
+        general_error: "The scope filter could not be applied successfully"

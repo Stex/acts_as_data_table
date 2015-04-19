@@ -1,7 +1,7 @@
 require 'acts_as_data_table/version'
 
 require 'acts_as_data_table/multi_column_scopes'
-#require 'acts_as_data_table/session_helper'
+require 'acts_as_data_table/shared/session'
 
 require 'acts_as_data_table/scope_filters/action_controller'
 require 'acts_as_data_table/scope_filters/active_record'
@@ -11,6 +11,12 @@ end
 
 module Acts
   module DataTable
+    I18n_LOCALES = %w(en)
+
+    def self.log(level, message)
+      Rails.logger.send(level, "Acts::DataTable [#{level}] -- #{message}")
+    end
+
     def self.ensure_nested_hash!(hash, *keys)
       h = hash
       keys.each do |key|
@@ -24,10 +30,20 @@ module Acts
 
       h = hash
       keys.each do |key|
-        return nil unless h[key]
+        return nil if h[key].nil?
         h = h[key]
       end
       h
+    end
+
+    #
+    # Retrieves a value from the gem's locale namespace.
+    # If there are no translations for the application's locale, the
+    # english versions are used.
+    #
+    def self.t(key, options)
+      locale = I18n_LOCALES.include?(I18n.locale.to_s) ? I18n.locale : 'en'
+      I18n.t(key, options.merge({:scope => 'acts_as_data_table'}, :locale => locale))
     end
   end
 end
@@ -35,8 +51,10 @@ end
 ActiveRecord::Base.class_eval do
   include Acts::DataTable::MultiColumnScopes
   include Acts::DataTable::ScopeFilters::ActiveRecord
+  include Acts::DataTable::SortableColumns::ActiveRecord
 end
 
 ActionController::Base.class_eval do
   include Acts::DataTable::ScopeFilters::ActionController
+  include Acts::DataTable::SortableColumns::ActionController
 end
