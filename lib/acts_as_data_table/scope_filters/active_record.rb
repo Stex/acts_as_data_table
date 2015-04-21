@@ -20,6 +20,8 @@ module Acts
           # @param [Hash] options
           #   Additional options to customize the generated filter
           #
+          # ----
+          #
           # @option options [Array<String, Symbol>] :args ([])
           #   Arguments needed by the scope. This is the case if the scope consists
           #   of a lambda object.
@@ -51,6 +53,21 @@ module Acts
           #
           #   The validation method is supposed to return an Array<String>
           #   containing the error messages or a simple boolean value.
+          #
+          # ----
+          #
+          # @example A filter group for locked and not locked records, expecting the scopes :locked and :not_locked to be present.
+          #
+          #     has_scope_filter :status, :locked
+          #     has_scope_filter :status, :not_locked
+          #
+          # @example A full text search with one argument (scope: full_text, formal parameter: text)
+          #
+          #     has_scope_filter :quick_search, :full_text, [:text]
+          #
+          # @example A date range filter
+          #
+          #     has_scope_filter :date, :between, [:start_date, :end_date]
           #
           def has_scope_filter(group, scope, options = {})
             #Load additional helper methods into the model class
@@ -250,6 +267,12 @@ module Acts
         #   based on the registered filter and the given arguments.
         #   This method should be used to ensure the correct order
         #   of arguments when applying a scope.
+        #
+        # @example Actual parameter generation for a date range scope
+        #
+        #   #has_scope_filter :date, :between, [:start_date, :end_date]
+        #   actual_params(model, :date, :between, {:end_date => '2015-04-01', :start_date => '2015-03-01'})
+        #   #=> ['2015-03-01', '2015-04-01']
         #
         def self.actual_params(model, group, scope, args)
           res = []

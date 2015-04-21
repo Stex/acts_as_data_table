@@ -9,8 +9,12 @@ module Acts
           @action_name     = action_name
         end
 
-        def session
+        def sf_session
           @session[:scope_filters] ||= {}
+        end
+
+        def sc_session
+          @session[:sortable_columns] ||= {}
         end
 
         def model
@@ -30,7 +34,7 @@ module Acts
         #   by the group they are registered in.
         #
         def active_filters
-          session[current_action_key] || {}
+          sf_session[current_action_key] || {}
         end
 
         #
@@ -109,13 +113,74 @@ module Acts
         # Resets all filters for the current controller action
         #
         def remove_all_filters!
-          session[current_action_key] = {}
+          sf_session[current_action_key] = {}
+        end
+
+        #----------------------------------------------------------------
+        #                        Sortable Columns
+        #----------------------------------------------------------------
+
+        #
+        # Adds or removes a column from the current sorting columns
+        # This happens whenever the user decides to sort a table by multiple columns
+        #
+        def toggle_column!(model_name, column_name)
+
+        end
+
+        #
+        # Changes the sorting direction for the given column
+        #
+        def change_direction!(model_name, column_name)
+
+        end
+
+        #
+        # Replaces all current sorting columns with the given one
+        #
+        def set_base_column!(model_name, column_name)
+
+        end
+
+        #
+        # Retrieves the current sorting direction for a given column.
+        #
+        # @return [String, NilClass] 'ASC' or 'DESC' if the given column
+        #   is currently active, +nil+ otherwise
+        #
+        def sorting_direction(model_name, column_name)
+          d = column_data(model_name, column_name)
+          current_action_session(sc_session).assoc(d[:column]).try(:last)
+        end
+
+        #
+        # @return [TrueClass, FalseClass] +true+ if the given column is currently
+        #   used for sorting
+        #
+        def active_column?(model_name, column_name)
+          !!sorting_direction(model_name, column_name)
         end
 
         private
 
-        def current_action_session
-          session[current_action_key] ||= {}
+        #
+        # @return [ActiveRecord::Base] The constantized model
+        #
+        def get_model(model_name)
+          model_name.camelize.constantize
+        end
+
+        #
+        # @return [Hash] The constantized model and column name with table prefix
+        #
+        def column_data(model_name, column_name)
+          m      = get_model(model_name)
+          column = "#{m.table_name}.#{column_name}"
+          {:model => m, :column => column}
+        end
+
+        def current_action_session(s = sf_session)
+          s[current_action_key] ||= {}
         end
 
         #

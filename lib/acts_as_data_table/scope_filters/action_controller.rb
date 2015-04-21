@@ -26,7 +26,7 @@ module Acts
           #
           def scope_filters(options = {})
             #Include on-demand methods
-            include Acts::DataTable::ScopeFilters::ActionController::OnDemand
+            include Acts::DataTable::Shared::ActionController::OnDemand
 
             #Add helper methods to this controller's views
             helper :acts_as_data_table
@@ -34,10 +34,9 @@ module Acts
             model_name = (options.delete(:model) || self.name.underscore.split('/').last.sub('_controller', '')).to_s.camelize.singularize
 
             #Create a custom before filter
-            around_filter options do |controller, block|
+            around_filter(options) do |controller, block|
 
-              params    = controller.request.params
-              sf_params = params[:scope_filters]
+              sf_params = controller.request.params[:scope_filters]
 
               begin
 
@@ -75,16 +74,6 @@ module Acts
                 Acts::DataTable::ScopeFilters::ActionController.clear_request_filters!
               end
             end
-          end
-        end
-
-        module OnDemand
-          def self.included(base)
-            base.helper_method :acts_as_data_table_session
-          end
-
-          def acts_as_data_table_session
-            @acts_as_data_table_session ||= Acts::DataTable::Shared::Session.new(session, controller_path, action_name)
           end
         end
 

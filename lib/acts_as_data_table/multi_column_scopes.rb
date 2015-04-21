@@ -91,7 +91,7 @@ module Acts
           if model.column_names.include?(arg.to_s)
             [model.table_name, arg.to_s].join('.')
           else
-            logger.warn "The table #{model.table_name} does not contain a column named #{arg}"
+            raise ArgumentError.new "The table '#{model.table_name}' does not have a column named '#{arg}'"
           end
         end
       end
