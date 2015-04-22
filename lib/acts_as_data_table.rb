@@ -1,10 +1,15 @@
 require 'acts_as_data_table/version'
 
 require 'acts_as_data_table/multi_column_scopes'
+
 require 'acts_as_data_table/shared/session'
+require 'acts_as_data_table/shared/action_controller'
 
 require 'acts_as_data_table/scope_filters/action_controller'
 require 'acts_as_data_table/scope_filters/active_record'
+
+require 'acts_as_data_table/sortable_columns/action_controller'
+require 'acts_as_data_table/sortable_columns/active_record'
 
 module ActsAsDataTable
 end

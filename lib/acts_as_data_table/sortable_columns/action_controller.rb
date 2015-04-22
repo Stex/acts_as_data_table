@@ -26,56 +26,48 @@ module Acts
           #     sortable_columns :only => [:index], :default => {:index => [['deleted_at', 'ASC'], ['name', 'ASC']]}
           #
           def sortable_columns(options = {})
+            #Include on-demand methods
+            include Acts::DataTable::Shared::ActionController::OnDemand
 
-            defaults = options.delete(:default) ||= {}
+            defaults = (options.delete(:default) || {}).stringify_keys
 
             around_filter(options) do |controller, block|
 
-              af_params = controller.request.params[:sortable_columns]
+              af_params        = controller.request.params[:sortable_columns]
+              request_defaults = defaults[controller.action_name.to_s] || []
 
               begin
-                #Ensure that any scope filter related params are given and
-                #that the given action is valid (add a filter, remove a filter, remove all filters)
-                if af_params.present? && %w(add remove reset).include?(sf_params[:action])
-                  case sf_action = sf_params[:action].to_s
-                    when 'add'
-                      #Ensure that a group and a scope name are given
-                      if [:group, :scope].all? { |p| sf_params[p].present? }
-                        unless controller.acts_as_data_table_session.add_filter(sf_params[:group], sf_params[:scope], sf_params[:args])
-                          #TODO: add error message if the validation failed or the filter was not available
-                        end
-                      end
-                    when 'remove'
-                      #Ensure that a group and a filter name are given
-                      if sf_params[:group].present?
-                        controller.acts_as_data_table_session.remove_filter!(sf_params[:group])
-                      end
-                    when 'reset'
-                      controller.acts_as_data_table_session.remove_all_filters!
+                #Ensure that the given action is valid
+                if af_params.present? && %w(toggle change_direction set_base set).include?(af_params[:action].to_s)
+                  case af_action = af_params[:action].to_s
+                    when 'toggle'
+                      controller.acts_as_data_table_session.toggle_column!(af_params[:model], af_params[:column])
+                    when 'change_direction'
+                      controller.acts_as_data_table_session.change_direction!(af_params[:model], af_params[:column])
+                    when 'set_base'
+                      controller.acts_as_data_table_session.set_base_column!(af_params[:model], af_params[:column])
+                    when 'set'
+                      controller.acts_as_data_table_session.set_columns!(af_params[:columns])
                     else
-                      raise ArgumentError.new "Invalid scope filter action '#{sf_action}' was given."
+                      raise ArgumentError.new "Invalid scope filter action '#{af_action}' was given."
                   end
                 end
 
+                #Set the defaults as sorting columns none were set by the user
+                if controller.acts_as_data_table_session.active_columns.empty?
+                  controller.acts_as_data_table_session.set_columns!(request_defaults)
+                end
+
                 #Set the updated filters
-                Acts::DataTable::SortableColumns::ActionController.set_request_sort_columns!(controller.acts_as_data_table_session.active_sort_columns)
+                Acts::DataTable::SortableColumns::ActionController.set_request_sort_columns!(controller.acts_as_data_table_session.active_columns)
                 block.call
               ensure
                 Acts::DataTable::SortableColumns::ActionController.clear_request_sort_columns!
               end
 
             end
-
-
-
           end
-
         end
-
-        module OnDemand
-
-        end
-
 
         #
         # Retrieves the columns to order by for the current request from the thread space. This is used in the
@@ -104,7 +96,6 @@ module Acts
         def self.clear_request_sort_columns!
           Thread.current[:sortable_columns] = nil
         end
-
       end
     end
   end

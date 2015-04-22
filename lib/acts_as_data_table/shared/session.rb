@@ -121,25 +121,60 @@ module Acts
         #----------------------------------------------------------------
 
         #
+        # @return [Array] The sorting columns for the current request
+        #   (controller + action) in the format [['col1', 'dir1'], ['col2', 'dir2'], ...]
+        #
+        #   If no columns are set, the given default ones are used.
+        #
+        def active_columns
+          current_action_session(sc_session, [])
+        end
+
+        #
         # Adds or removes a column from the current sorting columns
         # This happens whenever the user decides to sort a table by multiple columns
         #
         def toggle_column!(model_name, column_name)
-
+          if active_column?(model_name, column_name)
+            remove_column!(model_name, column_name)
+          else
+            add_column!(model_name, column_name)
+          end
         end
 
         #
         # Changes the sorting direction for the given column
+        # If no direction is given, it will change it to the opposite of the current direction
         #
-        def change_direction!(model_name, column_name)
-
+        def change_direction!(model_name, column_name, direction = nil)
+          if active_column?(model_name, column_name)
+            ca    = column_array(model_name, column_name)
+            ca[1] = (direction || opposite_direction(ca.last)).to_s.upcase
+          end
         end
 
         #
         # Replaces all current sorting columns with the given one
         #
-        def set_base_column!(model_name, column_name)
+        def set_base_column!(model, column, direction = nil)
+          reset_columns!
+          add_column!(model, column, direction)
+        end
 
+        #
+        # Sets all sorting columns for the current controller action at once.
+        # This can be used when supplying the user with a form to choose
+        # the sorting in a separate area of the page instead of clicking
+        # on table column headers and adding one column after the other
+        #
+        # @param [Array<String>] columns
+        #   A 2D array of the form [['model_name', 'column_name', 'direction'], ...]
+        #
+        def set_columns!(columns)
+          reset_columns!
+          columns.each do |model, column, direction|
+            add_column!(model, column, direction)
+          end
         end
 
         #
@@ -149,8 +184,7 @@ module Acts
         #   is currently active, +nil+ otherwise
         #
         def sorting_direction(model_name, column_name)
-          d = column_data(model_name, column_name)
-          current_action_session(sc_session).assoc(d[:column]).try(:last)
+          column_array(model_name, column_name).try(:last)
         end
 
         #
@@ -158,16 +192,56 @@ module Acts
         #   used for sorting
         #
         def active_column?(model_name, column_name)
-          !!sorting_direction(model_name, column_name)
+          !!column_array(model_name, column_name)
         end
 
         private
 
         #
+        # Removes all current sorting columns
+        #
+        def reset_columns!
+          sc_session[current_action_key] = []
+        end
+
+        #
+        # @return [String] the opposite direction to the given one
+        #
+        def opposite_direction(direction)
+          direction.downcase == 'asc' ? 'DESC' : 'ASC'
+        end
+
+        #
+        # Removes the given column from the current sorting
+        #
+        def remove_column!(model_name, column_name)
+          current_action_session(sc_session, []).delete(column_array(model_name, column_name))
+        end
+
+        #
+        # Adds the given column to the current sorting
+        #
+        def add_column!(model_name, column_name, direction = nil)
+          direction ||= 'ASC'
+          d           = column_data(model_name, column_name)
+          current_action_session(sc_session, []).push([d[:column], direction.to_s.upcase])
+        end
+
+        #
+        # Retrieves the array consisting of column name and direction from the session
+        #
+        # @return [Array, NilClass] Either an array of the form ['table.column', 'direction']
+        #   or +nil+ if the given column is not part of the current sorting
+        #
+        def column_array(model_name, column_name)
+          current_action_session(sc_session, []).assoc(column_data(model_name, column_name)[:column])
+        end
+
+        #
         # @return [ActiveRecord::Base] The constantized model
         #
         def get_model(model_name)
-          model_name.camelize.constantize
+          model_name.to_s.camelize.constantize
         end
 
         #
@@ -179,8 +253,8 @@ module Acts
           {:model => m, :column => column}
         end
 
-        def current_action_session(s = sf_session)
-          s[current_action_key] ||= {}
+        def current_action_session(s = sf_session, default = {})
+          s[current_action_key] ||= default
         end
 
         #

@@ -1,4 +1,4 @@
-= link_to sortable_column.caption, sortable_column.url_replace, :class => 'sortable-column-link',
+= link_to column.caption, column.urls.set_base, :class => 'sortable-column-link',
                                                                 'data-url-add'    => url_for(sortable_column.url_add_toggle),
                                                                 'data-url-remove' => url_for(sortable_column.url_remove),
                                                                 'data-remote'     => true,
