@@ -19,8 +19,6 @@ module ActsAsDataTableHelper
   #   the given +:scope+ within the given +group+ and cannot be used
   #   to add it.
   #
-  #
-  #
   def scope_filter_link(group, scope, options = {})
     caption         = options.delete(:caption) || scope_filter_caption(group, scope, options[:args])
     surrounding_tag = options.delete(:surrounding)
@@ -29,7 +27,7 @@ module ActsAsDataTableHelper
     url             = scope_filter_link_url(group, scope, options)
 
     classes = options[:class].try(:split, ' ') || []
-    classes << 'active' if acts_as_data_table_session.active_filter?(group, scope, args)
+    classes << 'active' if scope && acts_as_data_table_session.active_filter?(group, scope, args)
 
     options[:class] = classes.join(' ')
 
@@ -52,7 +50,7 @@ module ActsAsDataTableHelper
   def scope_filter_link_url(group, scope, options)
     args            = options.delete(:args)
     toggle          = options.delete(:toggle)
-    auto_remove     = toggle && acts_as_data_table_session.active_filter?(group, scope, args)
+    auto_remove     = scope && toggle && acts_as_data_table_session.active_filter?(group, scope, args)
     remove          = options.delete(:remove) || auto_remove
 
     if remove
@@ -60,6 +58,44 @@ module ActsAsDataTableHelper
     else
       url_for({:scope_filters => {:action => 'add', :group => group, :scope => scope, :args => args}})
     end
+  end
+
+  #
+  # Generates a URL to be used as form action for filters which require
+  # dynamic arguments
+  #
+  # @return [String] the generated URL
+  #
+  # @example Using the rails form helper with a scope filter url
+  #
+  #     - form_tag(scope_filter_form_url) do
+  #       ...
+  #
+  def scope_filter_form_url(group, scope)
+    url_for({:scope_filters => {:action => 'add', :group => group, :scope => scope}})
+  end
+
+
+  def scope_filter_form(group, scope, options = {}, &proc)
+    content = capture(Acts::DataTable::ScopeFilters::FormHelper.new(self, group, scope), &proc)
+    method  = options[:method] || :get
+    if options.delete(:remote)
+      options.delete(:method)
+      form_remote_tag :url => scope_filter_form_url(group, scope), :method => method, :html => options do
+        concat(content)
+      end
+    else
+      form_tag scope_filter_form_url(group, scope), options do
+        concat(content)
+      end
+    end
+  end
+
+  #
+  # @return [String] URL to remove all active scope filters for the current action
+  #
+  def scope_filter_reset_url
+    url_for({:scope_filters => {:action => :reset}})
   end
 
   #
@@ -74,6 +110,13 @@ module ActsAsDataTableHelper
   end
 
   #
+  # @return [Hash] Arguments used for the given filter
+  #
+  def scope_filter_args(group, scope)
+    Acts::DataTable.lookup_nested_hash(acts_as_data_table_session.active_filters, group.to_s, scope.to_s) || {}
+  end
+
+  #
   # Generates a scope filter caption
   #
   def scope_filter_caption(group, scope, args = {})
@@ -81,11 +124,17 @@ module ActsAsDataTableHelper
     Acts::DataTable::ScopeFilters::ActiveRecord.scope_filter_caption(model, group, scope, args)
   end
 
+  def active_scope_filter(group)
+    acts_as_data_table_session.active_filter(group)
+  end
+
   #----------------------------------------------------------------
   #                       Sortable Columns
   #----------------------------------------------------------------
 
   def sortable_column(model, column, caption, options = {}, &proc)
+    renderer_class = options.delete(:renderer) || Acts::DataTable::SortableColumns::Renderers.default_renderer
+
     sortable                 = sortable_column_data(model, column)
     sortable[:html_options]  = options
     sortable[:caption]       = caption
@@ -98,24 +147,8 @@ module ActsAsDataTableHelper
     if block_given?
       yield sortable
     else
-      capture_haml do
-        link_options                              = sortable.html_options
-        link_options['data-init']                 = 'sortable-column'
-        link_options['data-remote']               = sortable.remote
-        link_options['data-url-toggle']           = sortable.urls.toggle
-        link_options['data-url-set-base']         = sortable.urls.set_base
-        link_options['data-url-change-direction'] = sortable.urls.change_direction
-        link_options['data-active']               = 'true' if sortable.active
-
-        dir_caption = sortable.direction == 'ASC' ? '&Delta;' : '&nabla;'
-
-        haml_concat link_to(caption, '#', link_options)
-
-        if sortable.active
-          link_options['data-init'] = 'sortable-column-direction'
-          haml_concat link_to(dir_caption, '#', link_options)
-        end
-      end
+      renderer = renderer_class.constantize.new(sortable, self)
+      renderer.to_html
     end
   end
 

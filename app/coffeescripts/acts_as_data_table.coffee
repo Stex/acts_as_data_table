@@ -8,13 +8,14 @@
 #
 jQuery(document).ready () ->
   jQuery(document).on "click", '[data-init=sortable-column]', (e) ->
+    #Keep the browser from jumping to the top due to the href='#'
+    e.preventDefault()
+
     urlToggle          = jQuery(@).data('urlToggle')
     urlSetBase         = jQuery(@).data('urlSetBase')
 
-    remote             = jQuery(@).data('remote') == 'true'
-    active             = jQuery(@).data('active') == 'true'
-
-    jQuery(@).addClassName('active') if active
+    remote             = jQuery(@).data('remote')
+    active             = jQuery(@).data('active')
 
     url = urlSetBase
 
@@ -31,8 +32,10 @@ jQuery(document).ready () ->
     return false
 
   jQuery(document).on "click", "[data-init=sortable-column-direction]", (e) ->
+    e.preventDefault()
+
     url    = jQuery(@).data('urlChangeDirection')
-    remote = jQuery(@).data('remote') == 'true'
+    remote = jQuery(@).data('remote')
 
     if remote
       jQuery.ajax

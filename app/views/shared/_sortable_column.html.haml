@@ -1,9 +1,0 @@
-= link_to column.caption, column.urls.set_base, :class => 'sortable-column-link',
-                                                                'data-url-add'    => url_for(sortable_column.url_add_toggle),
-                                                                'data-url-remove' => url_for(sortable_column.url_remove),
-                                                                'data-remote'     => true,
-                                                                'data-active'     => sortable_column.active
-
-- if sortable_column.active
-  - direction_caption = sortable_column.direction == 'ASC' ? '&Delta;' : '&nabla;'
-  = link_to_remote(direction_caption, :url => sortable_column.url_add_toggle, :method => :get)

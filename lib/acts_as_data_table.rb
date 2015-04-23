@@ -10,6 +10,11 @@ require 'acts_as_data_table/scope_filters/active_record'
 
 require 'acts_as_data_table/sortable_columns/action_controller'
 require 'acts_as_data_table/sortable_columns/active_record'
+require 'acts_as_data_table/scope_filters/form_helper'
+
+#Sortable Column Renderers
+require 'acts_as_data_table/sortable_columns/renderers/default'
+require 'acts_as_data_table/sortable_columns/renderers/bootstrap2'
 
 module ActsAsDataTable
 end

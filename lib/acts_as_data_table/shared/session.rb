@@ -49,6 +49,15 @@ module Acts
           used_args = Acts::DataTable.lookup_nested_hash(active_filters, group.to_s, scope.to_s)
           used_args && (args.stringify_keys.to_a - used_args.to_a).empty?
         end
+        
+        #
+        # @return [String, NilClass] The name of the scope filter which is
+        #   currently active in the given group or +nil+ if no filter from this group is
+        #   currently active
+        #
+        def active_filter(group)
+          Acts::DataTable.lookup_nested_hash(active_filters, group.to_s).try(:keys).try(:first)
+        end
 
         #
         # Adds a new filter to the current controller action
