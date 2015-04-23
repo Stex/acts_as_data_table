@@ -7,6 +7,7 @@ require 'acts_as_data_table/shared/action_controller'
 
 require 'acts_as_data_table/scope_filters/action_controller'
 require 'acts_as_data_table/scope_filters/active_record'
+require 'acts_as_data_table/scope_filters/validations'
 
 require 'acts_as_data_table/sortable_columns/action_controller'
 require 'acts_as_data_table/sortable_columns/active_record'
@@ -51,9 +52,9 @@ module Acts
     # If there are no translations for the application's locale, the
     # english versions are used.
     #
-    def self.t(key, options)
+    def self.t(key, options = {})
       locale = I18n_LOCALES.include?(I18n.locale.to_s) ? I18n.locale : 'en'
-      I18n.t(key, options.merge({:scope => 'acts_as_data_table'}, :locale => locale))
+      I18n.t(key, options.merge({:scope => 'acts_as_data_table', :locale => locale}))
     end
   end
 end

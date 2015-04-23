@@ -44,7 +44,7 @@ module Acts
           #   to search for a defined scope name within the scope 'activerecord.scope_filters.model.SCOPE'
           #   Possible scope arguments are passed in as strings
           #
-          # @option options [Proc, Symbol] :validations (nil)
+          # @option options [Proc, Symbol] :validate (nil)
           #   A validation method for the scope filter. The filter is only applied if the validation method returns +true+
           #   This is useful if e.g. a scope needs two dates to work correctly and should only be applied
           #   if the dates have the correct format.
@@ -212,30 +212,14 @@ module Acts
         # @see #register_filter for arguments
         #
         def self.validation_errors(model, group, scope, args)
-          #If they match, check the actual validation method
-          case proc = self.filter_options(model, group, scope)[:validations]
-          when Proc
-            result = proc.call(args)
-          when Symbol
-            if model.respond_to?(proc)
-              result = model.send(proc, args)
-            else
-              raise ArgumentError.new "The method '#{proc}' was set up as scope filter validation method in model '#{model.name}', but doesn't exist."
-            end
-          when NilClass
-            result = true
-          else
-            raise ArgumentError.new "An invalid validations method was given for the scope '#{scope}' in group '#{group}' of model '#{model.name}'"
+          validations   = self.filter_options(model, group, scope)[:validate]
+          result        = []
+
+          Array(validations).each do |proc|
+            result += self.run_validation(model, group, scope, proc, args)
           end
 
-          #If the result is already an array of error messages, we can simply return it.
-          #Otherwise, we have to generate an error array based on the boolean result
-          #the validation method produced.
-          if result.is_a?(Array)
-            result
-          else
-            result ? [] : [Acts::DataTable.t('scope_filters.validations.general_error')]
-          end
+          result.uniq.compact
         end
 
         #
@@ -244,7 +228,8 @@ module Acts
         #
         def self.scope_filter_caption(model, group, scope, args)
           args ||= {}
-          case caption = self.filter_options(model, group, scope)[:captions]
+
+          case caption = self.filter_options(model, group, scope)[:caption]
           when String
             caption
           when Symbol
@@ -280,6 +265,35 @@ module Acts
             res << args.stringify_keys[arg_name.to_s]
           end
           res
+        end
+
+        def self.run_validation(model, group, scope, proc, args)
+          #If they match, check the actual validation method
+          case proc
+            when Proc
+              result = proc.call(args)
+            when Symbol
+              if Validations.built_in_validation?(proc)
+                result = Validations.send(proc, args)
+              elsif model.respond_to?(proc)
+                result = model.send(proc, args)
+              else
+                raise ArgumentError.new "The method '#{proc}' was set up as scope filter validation method in model '#{model.name}', but doesn't exist."
+              end
+            when NilClass
+              result = true
+            else
+              raise ArgumentError.new "An invalid validations method was given for the scope '#{scope}' in group '#{group}' of model '#{model.name}'"
+          end
+
+          #If the result is already an array of error messages, we can simply return it.
+          #Otherwise, we have to generate an error array based on the boolean result
+          #the validation method produced.
+          if result.is_a?(Array)
+            result
+          else
+            result ? [] : [Acts::DataTable.t('scope_filters.validations.general_error')]
+          end
         end
       end
     end
