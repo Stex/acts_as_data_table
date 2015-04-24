@@ -22,7 +22,11 @@ module Acts
         end
 
         def errors
-          @errors ||= []
+          @errors ||= {}
+        end
+
+        def errors_on(context)
+          errors[context.to_s] || []
         end
 
         #----------------------------------------------------------------
@@ -88,19 +92,19 @@ module Acts
 
           #Check whether the given filter was registered properly in the model
           unless Acts::DataTable::ScopeFilters::ActiveRecord.registered_filter?(model, group, scope)
-            add_error Acts::DataTable.t('scope_filters.add_filter.filter_not_registered', :model => model.name, :group => group, :scope => scope)
+            add_error group, Acts::DataTable.t('scope_filters.add_filter.filter_not_registered', :model => model.name, :group => group, :scope => scope)
             return false
           end
           
           #Check whether the given arguments are sufficient for the given filter
           unless Acts::DataTable::ScopeFilters::ActiveRecord.matching_arity?(model, group, scope, args.size)
-            add_error Acts::DataTable.t('scope_filters.add_filter.non_matching_arity', :model => model.name, :group => group, :scope => scope)
+            add_error group, Acts::DataTable.t('scope_filters.add_filter.non_matching_arity', :model => model.name, :group => group, :scope => scope)
             return false
           end
 
           #Run possible validation methods on the given filter and add generated error messages
-          if (errors = Acts::DataTable::ScopeFilters::ActiveRecord.validation_errors(model, group, scope, args)).any?
-            errors.each {|e| add_error(e)}
+          if (errors = Acts::DataTable::ScopeFilters::Validator.new(model, group, scope, args).validate).any?
+            errors.each {|e| add_error(group, e)}
             return false
           end
 
@@ -271,17 +275,21 @@ module Acts
         # a current action should be retrieved.
         #
         def reset_errors!
-          @errors = []
+          @errors = {}
         end
 
         #
         # Adds an error message to the errors array
         #
+        # @param [String] context
+        #   Context the error occurred in, e.g. a scope filter group
+        #
         # @param [String] message
         #   The error message to be added.
         #
-        def add_error(message)
-          errors << message
+        def add_error(context, message)
+          errors[context.to_s] ||= []
+          errors[context.to_s] << message
         end
 
         #

@@ -7,4 +7,4 @@ en:
 
       validations:
         general_error: "The scope filter could not be applied successfully"
-        invalid_date:  "'%{date}' is not a valid date."
+        invalid_date:  "%{arg_name} ('%{arg_value}') is not a valid date"

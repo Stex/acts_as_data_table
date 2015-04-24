@@ -7,7 +7,7 @@ require 'acts_as_data_table/shared/action_controller'
 
 require 'acts_as_data_table/scope_filters/action_controller'
 require 'acts_as_data_table/scope_filters/active_record'
-require 'acts_as_data_table/scope_filters/validations'
+require 'acts_as_data_table/scope_filters/validator'
 
 require 'acts_as_data_table/sortable_columns/action_controller'
 require 'acts_as_data_table/sortable_columns/active_record'

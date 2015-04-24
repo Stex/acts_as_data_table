@@ -45,10 +45,13 @@ module Acts
         private
 
         #
-        # Retrieves the current value for the given arg name from the session
+        # Retrieves the current value for the given arg name from the session.
+        # Also searches the current request's params if the arg couldn't be found in the session.
+        # This is useful to keep given values in case of validation errors.
         #
         def current_arg(arg)
-          Acts::DataTable.lookup_nested_hash(@action_view.acts_as_data_table_session.active_filters, @group, @scope.to_s, arg.to_s)
+          Acts::DataTable.lookup_nested_hash(@action_view.acts_as_data_table_session.active_filters, @group, @scope.to_s, arg.to_s) ||
+              Acts::DataTable.lookup_nested_hash(@action_view.params, :scope_filters, :args, arg)
         end
 
       end

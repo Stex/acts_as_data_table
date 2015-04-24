@@ -41,7 +41,7 @@ module Acts
           #   - Proc: The given proc is executed with a hash containing the given arguments (if any)
           #
           #   If nothing is given, the default caption is used, meaining the system will use I18n.t
-          #   to search for a defined scope name within the scope 'activerecord.scope_filters.model.SCOPE'
+          #   to search for a defined scope name within the scope 'activerecord.scope_filters.scopes.model.SCOPE'
           #   Possible scope arguments are passed in as strings
           #
           # @option options [Proc, Symbol] :validate (nil)
@@ -89,7 +89,7 @@ module Acts
                   #ever applied to the model as final protection.
                   # TODO: Check if the filter is causing an exception (probably through a wrong valiation method)
                   #       And remove it in this case, adding an error to the log or the module.
-                  if Acts::DataTable::ScopeFilters::ActiveRecord.valid_scope_filter?(model, group_name, scope, args)
+                  if Acts::DataTable::ScopeFilters::Validator.new(model, group_name, scope, args).valid?
                     actual_args = Acts::DataTable::ScopeFilters::ActiveRecord.actual_params(model, group_name, scope, args)
                     scope_chain = scope_chain.send(scope, *actual_args)
                   end
@@ -196,33 +196,6 @@ module Acts
         end
 
         #
-        # @see #register_filter for arguments
-        #
-        # @return [TrueClass, FalseClass] +true+ if the given filter passed the validations
-        #   It also checks whether the given argument count matches the amount of
-        #   formal parameters specified for the filter.
-        #
-        def self.valid_scope_filter?(*args)
-          self.validation_errors(*args).empty?
-        end
-
-        #
-        # Validates the given scope filter and returns possible error messages
-        #
-        # @see #register_filter for arguments
-        #
-        def self.validation_errors(model, group, scope, args)
-          validations   = self.filter_options(model, group, scope)[:validate]
-          result        = []
-
-          Array(validations).each do |proc|
-            result += self.run_validation(model, group, scope, proc, args)
-          end
-
-          result.uniq.compact
-        end
-
-        #
         # @return [String] The scope filter caption for the given scope
         # @see #has_scope_filter for more information about how the caption is generated.
         #
@@ -241,7 +214,7 @@ module Acts
           when Proc
             caption.call(args)
           else
-            options = {:scope => "activerecord.scope_filters.#{model.name.underscore}"}
+            options = {:scope => "activerecord.scope_filters.scopes.#{model.name.underscore}"}
             options.merge!(args.symbolize_keys)
             I18n.t(scope, options)
           end
@@ -267,34 +240,7 @@ module Acts
           res
         end
 
-        def self.run_validation(model, group, scope, proc, args)
-          #If they match, check the actual validation method
-          case proc
-            when Proc
-              result = proc.call(args)
-            when Symbol
-              if Validations.built_in_validation?(proc)
-                result = Validations.send(proc, args)
-              elsif model.respond_to?(proc)
-                result = model.send(proc, args)
-              else
-                raise ArgumentError.new "The method '#{proc}' was set up as scope filter validation method in model '#{model.name}', but doesn't exist."
-              end
-            when NilClass
-              result = true
-            else
-              raise ArgumentError.new "An invalid validations method was given for the scope '#{scope}' in group '#{group}' of model '#{model.name}'"
-          end
 
-          #If the result is already an array of error messages, we can simply return it.
-          #Otherwise, we have to generate an error array based on the boolean result
-          #the validation method produced.
-          if result.is_a?(Array)
-            result
-          else
-            result ? [] : [Acts::DataTable.t('scope_filters.validations.general_error')]
-          end
-        end
       end
     end
   end
