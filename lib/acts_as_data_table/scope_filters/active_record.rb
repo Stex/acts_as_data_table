@@ -78,8 +78,14 @@ module Acts
             unless scopes.has_key?(:with_scope_filters)
               # Generate the named scope which will handle the dynamically given filters
               # A filter is only applied if a given validation method returns +true+
-              named_scope :with_scope_filters, lambda {
-                filters = Acts::DataTable::ScopeFilters::ActionController.get_request_filters
+              #
+              # Usually, the filters are automatically fetched from the current
+              # thread space, however, in some cases it might be necessary to pass
+              # them in manually (e.g. when using a delayed job to fetch records).
+              # Please only do this if it is really necessary.
+              named_scope :with_scope_filters, lambda {|*args|
+                filters   = args.first
+                filters ||= Acts::DataTable::ScopeFilters::ActionController.get_request_filters
 
                 scope_chain = self
                 filters.each do |group_name, (scope, args)|
@@ -95,14 +101,25 @@ module Acts
                   end
                 end
 
-                conditions = Acts::DataTable.lookup_nested_hash(scope_chain.current_scoped_methods, :find, :conditions)
-                conditions ? {:conditions => conditions} : {}
+                results = Acts::DataTable.lookup_nested_hash(scope_chain.current_scoped_methods, :find)
+                results || {}
               }
             end
 
             Acts::DataTable::ScopeFilters::ActiveRecord.register_filter(self, group, scope, options)
           end
+
+          #
+          # Registers multiple simple filters at once.
+          # Important: This does not allow setting validations, custom captions or any other customization options.
+          #
+          def has_scope_filters(group, *scopes)
+            scopes.each do |s|
+              has_scope_filter(group, s)
+            end
+          end
         end
+
 
         #
         # This module is only included if at least one filter group was added to the model

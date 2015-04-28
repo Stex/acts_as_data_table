@@ -29,6 +29,13 @@ module Acts
         end
 
         #
+        # @return [Array] Filter validation errors on the current group
+        #
+        def errors
+          @action_view.acts_as_data_table_session.errors_on(@group)
+        end
+
+        #
         # @return [String] A generated field name for the given arg to be used in filter forms
         #
         def self.field_name(arg)

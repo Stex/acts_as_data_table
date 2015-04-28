@@ -3,15 +3,12 @@ module Acts
     module ScopeFilters
       class Validator
 
-
-
         def initialize(model, group, scope, args)
           @model = model
           @group = group
           @scope = scope
           @args  = args
         end
-
 
         #
         # Validates the given scope filter and returns possible error messages
@@ -23,7 +20,7 @@ module Acts
 
           Array(validations).inject([]) do |res, proc|
             res += run_validation(proc)
-            res #Not necessary, just for RubyMine inspections...
+            res
           end.uniq.compact
         end
 
@@ -67,6 +64,22 @@ module Acts
         def validate_all_present
           validate_all :blank do |k, v|
             v.present?
+          end
+        end
+
+        #
+        # Validates that all given arguments with names of the format /[a-z]+_id/
+        # actually refer to valid records in the system
+        #
+        def validate_record_existence
+          validate_all :invalid_record do |k, v|
+            m = /([a-z]+)_id/.match(k.to_s)
+            if m
+              model  = m[1].camelize.constantize
+              !!model.find_by_id(v)
+            else
+              true
+            end
           end
         end
 

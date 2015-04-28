@@ -70,6 +70,15 @@ module Acts
         end
 
         #
+        # Returns the currently active sortable columns.
+        # This function should only be used when the automatic scope +with_sortable_columns+
+        # is not working due to a different execution time or thread, e.g. a background worker.
+        #
+        def current_sortable_columns
+          Acts::DataTable::SortableColumns::ActionController.get_request_sort_columns
+        end
+
+        #
         # Retrieves the columns to order by for the current request from the thread space. This is used in the
         # model's scope, so no string has to be supplied in the controller action manually.
         #

@@ -2,9 +2,10 @@ en:
   acts_as_data_table:
     scope_filters:
       add_filter:
-        filter_not_registered: "The filter '%{scope}' in group '%{group}' was not properly registered in model '%{model}'"
-        non_matching_arity: "The filter '%{scope}' in group '%{group}' registered in model '%{model}' does did not get the required amount of arguments"
+        filter_not_registered: "The filter '%{scope_name}' in group '%{group}' was not properly registered in model '%{model}'"
+        non_matching_arity: "The filter '%{scope_name}' in group '%{group}' registered in model '%{model}' did not get the required amount of arguments"
 
       validations:
-        general_error: "The scope filter could not be applied successfully"
-        invalid_date:  "%{arg_name} ('%{arg_value}') is not a valid date"
+        general_error:  "The scope filter could not be applied successfully"
+        invalid_date:   "%{arg_name} ('%{arg_value}') is not a valid date"
+        invalid_record: "The filter argument '%{arg_name}' did not match any valid record in the system."

@@ -78,6 +78,20 @@ module Acts
         end
 
         #
+        # Returns the currently active scope filters
+        #
+        # This function should only be used when the automatic scope +with_scope_filters+
+        # is not working due to a different execution time or thread, e.g. a background worker.
+        #
+        def current_scope_filters
+          Acts::DataTable::ScopeFilters::ActionController.get_request_filters
+        end
+
+        #----------------------------------------------------------------
+        #                        Module Methods
+        #----------------------------------------------------------------
+
+        #
         # Saves the current request's active filters to the thread space
         #
         def self.set_request_filters!(model, filters)

@@ -92,13 +92,13 @@ module Acts
 
           #Check whether the given filter was registered properly in the model
           unless Acts::DataTable::ScopeFilters::ActiveRecord.registered_filter?(model, group, scope)
-            add_error group, Acts::DataTable.t('scope_filters.add_filter.filter_not_registered', :model => model.name, :group => group, :scope => scope)
+            add_error group, Acts::DataTable.t('scope_filters.add_filter.filter_not_registered', :model => model.name, :group => group, :scope_name => scope)
             return false
           end
           
           #Check whether the given arguments are sufficient for the given filter
           unless Acts::DataTable::ScopeFilters::ActiveRecord.matching_arity?(model, group, scope, args.size)
-            add_error group, Acts::DataTable.t('scope_filters.add_filter.non_matching_arity', :model => model.name, :group => group, :scope => scope)
+            add_error group, Acts::DataTable.t('scope_filters.add_filter.non_matching_arity', :model => model.name, :group => group, :scope_name => scope)
             return false
           end
 
