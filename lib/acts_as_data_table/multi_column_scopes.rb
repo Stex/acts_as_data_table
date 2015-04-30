@@ -11,7 +11,7 @@ module Acts
         # columns at once. Columns may either be in the own table
         # or in associated tables.
         # It also automatically generates concat queries to enable
-        # full name searches, e.g. for a user's table with
+        # full name searches, e.g. for a users table with
         # separate columns for first and last name (see examples below)
         #
         # The result can be used further to chain the query like

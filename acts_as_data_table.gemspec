@@ -8,9 +8,9 @@ Gem::Specification.new do |spec|
   spec.version       = ActsAsDataTable::VERSION
   spec.authors       = ["Stefan Exner"]
   spec.email         = ["stex@sterex.de"]
-  spec.summary       = %q{Initial Summary, to be changed}
-  spec.description   = %q{}
-  spec.homepage      = ""
+  spec.summary       = %q{Adds automatic scope based filtering and column sorting to controllers and models.}
+  spec.description   = %q{Adds methods to models and controllers to perform automatic filtering, sorting and multi-column-queries without having to worry about the implementation.}
+  spec.homepage      = 'https://www.github.com/stex/acts_as_data_table'
   spec.license       = "MIT"
 
   spec.files         = `git ls-files`.split($/)
