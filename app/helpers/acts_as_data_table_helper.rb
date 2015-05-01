@@ -147,8 +147,8 @@ module ActsAsDataTableHelper
     if block_given?
       yield sortable
     else
-      renderer = renderer_class.constantize.new(sortable, self)
-      renderer.to_html
+      renderer = renderer_class.is_a?(Class) ? renderer_class : renderer_class.constantize
+      renderer.new(sortable, self).to_html
     end
   end
 
