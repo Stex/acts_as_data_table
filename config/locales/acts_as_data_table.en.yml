@@ -9,3 +9,4 @@ en:
         general_error:  "The scope filter could not be applied successfully"
         invalid_date:   "%{arg_name} ('%{arg_value}') is not a valid date"
         invalid_record: "The filter argument '%{arg_name}' did not match any valid record in the system."
+        blank:          "The argument '%{arg_name}' has to be given."

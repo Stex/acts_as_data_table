@@ -97,7 +97,7 @@ module Acts
               elsif @model.respond_to?(proc)
                 result = @model.send(proc, @args)
               else
-                raise ArgumentError.new "The method '#{@proc}' was set up as scope filter validation method in model '#{@model.name}', but doesn't exist."
+                raise ArgumentError.new "The method '#{proc}' was set up as validation method for the scope '#{@scope}' in group '#{@group}' of model '#{@model.name}', but doesn't exist."
               end
             when NilClass
               result = true
