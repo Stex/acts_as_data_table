@@ -18,6 +18,8 @@ require 'acts_as_data_table/sortable_columns/renderers/default'
 require 'acts_as_data_table/sortable_columns/renderers/bootstrap2'
 require 'acts_as_data_table/sortable_columns/renderers/bootstrap3'
 
+require 'acts_as_data_table/engine' if defined?(::Rails)
+
 module ActsAsDataTable
 end
 
@@ -42,7 +44,7 @@ module Acts
 
       h = hash
       keys.each do |key|
-        return nil if h[key].nil?
+        return nil if h[key].nil? || (!h[key].is_a?(Hash) && key != keys.last)
         h = h[key]
       end
       h

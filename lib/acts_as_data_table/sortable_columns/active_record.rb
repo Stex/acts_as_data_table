@@ -2,8 +2,13 @@ module Acts
   module DataTable
     module SortableColumns
       module ActiveRecord
-        def self.included(base)
+        extend ActiveSupport::Concern
 
+        included do
+          send :extend, ClassMethods
+        end
+
+        module ClassMethods
           #
           # Scope which applies the currently active sorting directions.
           # The sorting columns are automatically fetched from the current thread space,
@@ -12,22 +17,18 @@ module Acts
           # the calculation happens in a different time or thread as it would in a
           # background calculation.
           #
-          base.named_scope :with_sortable_columns, lambda {|*args|
-            sort_columns   = args.first
+          def with_sortable_columns(sort_columns = nil)
             sort_columns ||= Acts::DataTable::SortableColumns::ActionController.get_request_sort_columns
 
-            if sort_columns.any?
-              sort_string = sort_columns.map {|col, dir| "#{col} #{dir}"}.join(', ')
-              {:order => sort_string}
-            else
-              {}
+            chain = current_scope
+
+            sort_columns.each do |col, dir|
+              chain = chain.order("#{col} #{dir}")
             end
-          }
 
+            chain
+          end
         end
-
-
-
       end
     end
   end

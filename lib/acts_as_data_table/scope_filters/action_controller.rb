@@ -2,9 +2,10 @@ module Acts
   module DataTable
     module ScopeFilters
       module ActionController
+        extend ActiveSupport::Concern
 
-        def self.included(base)
-          base.send :extend, ClassMethods
+        included do
+          send :extend, ClassMethods
         end
 
         module ClassMethods
@@ -27,9 +28,6 @@ module Acts
           def scope_filters(options = {})
             #Include on-demand methods
             include Acts::DataTable::Shared::ActionController::OnDemand
-
-            #Add helper methods to this controller's views
-            helper :acts_as_data_table
 
             model_name = (options.delete(:model) || self.name.underscore.split('/').last.sub('_controller', '')).to_s.camelize.singularize
 
@@ -116,14 +114,19 @@ module Acts
         # Fetches the current request's active filters from the thread space
         #
         def self.get_request_filters
-          self.get_request_data[:filters]
+          Acts::DataTable.lookup_nested_hash(self.get_request_data, :filters) || {}
         end
 
         #
         # @return [ActiveRecord::Base] the model used for filtering in the current request
         #
         def self.get_request_model
-          model = self.get_request_data[:model]
+          begin
+            model = self.get_request_data[:model]
+          rescue NoMethodError => e
+            raise Exception.new("The request model was not found. Did you add `scope_filters()` to your controller? (Original Exception: #{e.message})")
+          end
+
           model.camelize.constantize
         end
 

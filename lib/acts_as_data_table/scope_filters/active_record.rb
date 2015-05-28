@@ -2,8 +2,10 @@ module Acts
   module DataTable
     module ScopeFilters
       module ActiveRecord
-        def self.included(base)
-          base.send :extend, ClassMethods
+        extend ActiveSupport::Concern
+
+        included do
+          send :extend, ClassMethods
         end
 
         module ClassMethods
@@ -73,39 +75,6 @@ module Acts
             #Load additional helper methods into the model class
             extend Acts::DataTable::ScopeFilters::ActiveRecord::OnDemand
 
-            model = self
-
-            unless scopes.has_key?(:with_scope_filters)
-              # Generate the named scope which will handle the dynamically given filters
-              # A filter is only applied if a given validation method returns +true+
-              #
-              # Usually, the filters are automatically fetched from the current
-              # thread space, however, in some cases it might be necessary to pass
-              # them in manually (e.g. when using a delayed job to fetch records).
-              # Please only do this if it is really necessary.
-              named_scope :with_scope_filters, lambda {|*args|
-                filters   = args.first
-                filters ||= Acts::DataTable::ScopeFilters::ActionController.get_request_filters
-
-                scope_chain = self
-                filters.each do |group_name, (scope, args)|
-
-                  #Filters should already be validated when they are added through
-                  #the controller, this check is to ensure that no invalid filter is
-                  #ever applied to the model as final protection.
-                  # TODO: Check if the filter is causing an exception (probably through a wrong valiation method)
-                  #       And remove it in this case, adding an error to the log or the module.
-                  if Acts::DataTable::ScopeFilters::Validator.new(model, group_name, scope, args).valid?
-                    actual_args = Acts::DataTable::ScopeFilters::ActiveRecord.actual_params(model, group_name, scope, args)
-                    scope_chain = scope_chain.send(scope, *actual_args)
-                  end
-                end
-
-                results = Acts::DataTable.lookup_nested_hash(scope_chain.current_scoped_methods, :find)
-                results || {}
-              }
-            end
-
             Acts::DataTable::ScopeFilters::ActiveRecord.register_filter(self, group, scope, options)
           end
 
@@ -126,7 +95,26 @@ module Acts
         # to avoid pollution in other models.
         #
         module OnDemand
+          def with_scope_filters(filters = nil)
+            filters ||= Acts::DataTable::ScopeFilters::ActionController.get_request_filters
 
+            scope_chain = current_scope
+            model       = self
+
+            filters.each do |group_name, (scope, args)|
+              #Filters should already be validated when they are added through
+              #the controller, this check is to ensure that no invalid filter is
+              #ever applied to the model as final protection.
+              # TODO: Check if the filter is causing an exception (probably through a wrong validation method)
+              #       And remove it in this case, adding an error to the log or the module.
+              if Acts::DataTable::ScopeFilters::Validator.new(model, group_name, scope, args).valid?
+                actual_args = Acts::DataTable::ScopeFilters::ActiveRecord.actual_params(model, group_name, scope, args)
+                scope_chain = scope_chain.send(scope, *actual_args)
+              end
+            end
+
+            scope_chain
+          end
         end
 
         def self.registered_filters
@@ -151,7 +139,7 @@ module Acts
         #   Filter options, see #has_scope_filter
         #
         def self.register_filter(model, group, scope, options)
-          unless model.scopes.has_key?(scope.to_sym)
+          unless model.respond_to?(scope.to_sym)
             raise ArgumentError.new "The scope '#{scope}' in group '#{group}' does not exist in the model class '#{model.to_s}'"
           end
 

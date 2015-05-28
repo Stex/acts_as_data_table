@@ -32,7 +32,6 @@ module Acts
             defaults = (options.delete(:default) || {}).stringify_keys
 
             around_filter(options) do |controller, block|
-
               af_params        = controller.request.params[:sortable_columns]
               request_defaults = defaults[controller.action_name.to_s] || []
 
@@ -64,7 +63,6 @@ module Acts
               ensure
                 Acts::DataTable::SortableColumns::ActionController.clear_request_sort_columns!
               end
-
             end
           end
         end

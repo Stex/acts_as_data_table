@@ -26,7 +26,7 @@ module Acts
           #   The direction is either 'ASC' or 'DESC'
           #
           def direction_indicator
-            @sortable.direction == 'ASC' ? '&Delta;' : '&nabla;'
+            (@sortable.direction == 'ASC' ? '&Delta;' : '&nabla;').html_safe
           end
 
           #
@@ -42,7 +42,7 @@ module Acts
           def direction_link
             link_options                              = @sortable.html_options.clone
             link_options['data-init']                 = 'sortable-column-direction'
-            link_options['data-remote']               = @sortable.remote
+            link_options['data-remote-link']          = @sortable.remote
             link_options['data-url-change-direction'] = @sortable.urls.change_direction
             @action_view.link_to(direction_indicator, '#', link_options)
           end
@@ -53,7 +53,7 @@ module Acts
           def caption_link
             link_options                              = @sortable.html_options.clone
             link_options['data-init']                 = 'sortable-column'
-            link_options['data-remote']               = @sortable.remote
+            link_options['data-remote-link']          = @sortable.remote
             link_options['data-url-toggle']           = @sortable.urls.toggle
             link_options['data-url-set-base']         = @sortable.urls.set_base
             link_options['data-url-change-direction'] = @sortable.urls.change_direction

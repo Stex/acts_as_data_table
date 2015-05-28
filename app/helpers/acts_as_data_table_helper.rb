@@ -19,10 +19,16 @@ module ActsAsDataTableHelper
   #   the given +:scope+ within the given +group+ and cannot be used
   #   to add it.
   #
+  # @option options [Array, Hash, ActiveRecord::Base] :url (nil)
+  #   If given, the link will not point to the current action, but to the
+  #   given URL with the additional scope filter arguments.
+  #   Using this is usually not encouraged as scope filters are bound
+  #   to certain actions and arguments will only be fetche for the current one.
+  #
+  #
   def scope_filter_link(group, scope, options = {})
     caption         = options.delete(:caption) || scope_filter_caption(group, scope, options[:args])
     surrounding_tag = options.delete(:surrounding)
-    remote          = options.delete(:remote)
     args            = options[:args]
     url             = scope_filter_link_url(group, scope, options)
 
@@ -31,11 +37,7 @@ module ActsAsDataTableHelper
 
     options[:class] = classes.join(' ')
 
-    if remote
-      link = link_to_remote caption, :url => url, :method => :get, :html => options
-    else
-      link = link_to caption, url, options
-    end
+    link = link_to caption, url, options
 
     surrounding_tag ? content_tag(surrounding_tag, link, :class => options[:class]) : link
   end
@@ -52,11 +54,15 @@ module ActsAsDataTableHelper
     toggle          = options.delete(:toggle)
     auto_remove     = scope && toggle && acts_as_data_table_session.active_filter?(group, scope, args)
     remove          = options.delete(:remove) || auto_remove
+    predefined_url  = options.delete(:url)
 
-    if remove
-      url_for({:scope_filters => {:action => 'remove', :group => group}})
+    url_params      = remove ? {:action => 'remove', :group => group} :
+                               {:action => 'add', :group => group, :scope => scope, :args => args}
+
+    if predefined_url
+      polymorphic_path(predefined_url, {:scope_filters => url_params})
     else
-      url_for({:scope_filters => {:action => 'add', :group => group, :scope => scope, :args => args}})
+      url_for(:scope_filters => url_params)
     end
   end
 
@@ -78,16 +84,9 @@ module ActsAsDataTableHelper
 
   def scope_filter_form(group, scope, options = {}, &proc)
     content = capture(Acts::DataTable::ScopeFilters::FormHelper.new(self, group, scope), &proc)
-    method  = options[:method] || :get
-    if options.delete(:remote)
-      options.delete(:method)
-      form_remote_tag :url => scope_filter_form_url(group, scope), :method => method, :html => options do
-        concat(content)
-      end
-    else
-      form_tag scope_filter_form_url(group, scope), options do
-        concat(content)
-      end
+    options[:method] ||= :get
+    form_tag scope_filter_form_url(group, scope), options do
+      concat(content)
     end
   end
 
