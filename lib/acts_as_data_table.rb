@@ -50,6 +50,13 @@ module Acts
       h
     end
 
+    def self.stringify_fixnum_values(hash)
+      hash.inject({}) do |h, (k,v)|
+        h[k] = v.is_a?(Fixnum) ? v.to_s : v
+        h
+      end
+    end
+
     #
     # Retrieves a value from the gem's locale namespace.
     # If there are no translations for the application's locale, the

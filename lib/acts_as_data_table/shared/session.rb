@@ -44,12 +44,15 @@ module Acts
         #
         # Checks whether the given filter is currently active
         # Note that it also checks if it is active with exactly the given arguments.
+        # Fixnum values are automatically converted to strings to make it easier to
+        # pass in record ids.
         #
         # @return [TrueClass, FalseClass] +true+ if the filter is active AND
         #   the given +args+ match the ones used in the filter.
         #
         def active_filter?(group, scope, args)
           args ||= {}
+          args   = Acts::DataTable.stringify_fixnum_values(args)
           used_args = Acts::DataTable.lookup_nested_hash(active_filters, group.to_s, scope.to_s)
           used_args && (args.stringify_keys.to_a - used_args.to_a).empty?
         end
