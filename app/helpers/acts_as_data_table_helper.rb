@@ -138,7 +138,7 @@ module ActsAsDataTableHelper
     sortable[:html_options]  = options
     sortable[:caption]       = caption
     sortable[:remote]        = options.delete(:remote)
-    sortable[:remote]        = true if sortable[:remote].blank?
+    sortable[:remote]        = true if sortable[:remote].nil? || sortable[:remote] == ''
     sortable                 = OpenStruct.new(sortable)
 
     #If a block is given, we let the user handle the content of the table
