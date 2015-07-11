@@ -60,9 +60,9 @@ module ActsAsDataTableHelper
                                {:action => 'add', :group => group, :scope => scope, :args => args}
 
     if predefined_url
-      polymorphic_path(predefined_url, {:scope_filters => url_params})
+      polymorphic_url(predefined_url, {:scope_filters => url_params, :only_path => false})
     else
-      url_for(:scope_filters => url_params)
+      url_for(:scope_filters => url_params, :only_path => false)
     end
   end
 
@@ -121,6 +121,47 @@ module ActsAsDataTableHelper
   def scope_filter_caption(group, scope, args = {})
     model = Acts::DataTable::ScopeFilters::ActionController.get_request_model
     Acts::DataTable::ScopeFilters::ActiveRecord.scope_filter_caption(model, group, scope, args)
+  end
+
+  def active_scope_filters
+    acts_as_data_table_session.active_filters.inject([]) do |ary, (group, scope_and_args)|
+      scope, args = scope_and_args.to_a.flatten
+
+      ary << {
+          :group      => group,
+          :scope      => scope,
+          :remove_url => scope_filter_link_url(group, scope, :remove => true),
+          :caption    => scope_filter_caption(group, scope, args),
+          :args       => args
+      }
+
+      ary
+    end
+  end
+
+  #
+  # @return [TrueClass, FalseClass] +true+ if a filter was added in the current request
+  #
+  def scope_filter_added?
+    !!added_scope_filter
+  end
+
+  #
+  # Returns the scope filter which was added in the current request or +nil+ if none was added
+  #
+  def added_scope_filter
+    if filter = acts_as_data_table_session.added_filter
+      group, scope, args = filter[:group], filter[:scope], filter[:args]
+      {
+          :group      => group,
+          :scope      => scope,
+          :remove_url => scope_filter_link_url(group, scope, :remove => true),
+          :caption    => scope_filter_caption(group, scope, args),
+          :args       => args
+      }
+    else
+      nil
+    end
   end
 
   def active_scope_filter(group)

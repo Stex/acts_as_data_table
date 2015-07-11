@@ -88,6 +88,7 @@ module Acts
         #
         def add_filter(group, scope, args)
           reset_errors!
+          @added_filter = nil
 
           #Ensure that the argument hash is set properly. The following methods
           #might fail for filters which do not require arguments otherwise.
@@ -113,6 +114,10 @@ module Acts
 
           #Add the new filter to the session
           current_action_session[group.to_s] = {scope.to_s => args.stringify_keys}
+
+          #Keep track of the latest added filter, so developers can react to it accordingly
+          @added_filter = {:group => group.to_s, :scope => scope.to_s, :args => args.stringify_keys}
+
           true
         end
 
@@ -130,6 +135,20 @@ module Acts
         #
         def remove_all_filters!
           sf_session[current_action_key] = {}
+        end
+
+        #
+        # @return [TrueClass, FalseClass] +true+ if a filter was added in the current request
+        #
+        def filter_added?
+          !!added_filter
+        end
+
+        #
+        # Returns the filter which was added in the current request or +nil+ if none was added
+        #
+        def added_filter
+          @added_filter
         end
 
         #----------------------------------------------------------------
